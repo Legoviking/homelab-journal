@@ -1,0 +1,42 @@
+# Traefik static config.
+
+log:
+  level: INFO
+
+api:
+  dashboard: false   # off until we decide how to protect it
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: proxy
+  file:
+    directory: /etc/traefik/conf.d
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      storage: /letsencrypt/acme.json
+      # Production Let's Encrypt. To test a change safely, add back:
+      #   caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+      # (and delete letsencrypt/acme.json when switching either way).
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"

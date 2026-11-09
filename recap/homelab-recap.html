@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homelab Day One Recap</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column with wide "figure" bands for diagrams; a patch-panel feel: slate neutrals, amber signal for traffic, teal for secured paths. */
+:root {
+  --bg: #f5f7f8;
+  --surface: #ffffff;
+  --sunk: #e9eef0;
+  --fg: #1b2428;
+  --muted: #56656c;
+  --line: #c9d3d7;
+  --accent: #b86a00;      /* amber: traffic / attention */
+  --secure: #0f7a72;      /* teal: encrypted or locked paths */
+  --secure-soft: #dcefec;
+  --accent-soft: #f6e8d3;
+  --warn: #a1362b;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12181b; --surface: #1a2226; --sunk: #222c31; --fg: #e3eaec; --muted: #9aabb2;
+    --line: #34434a; --accent: #f0a53c; --secure: #4cc3b6; --secure-soft: #183a37;
+    --accent-soft: #3a2c17; --warn: #f08a7e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12181b; --surface: #1a2226; --sunk: #222c31; --fg: #e3eaec; --muted: #9aabb2;
+  --line: #34434a; --accent: #f0a53c; --secure: #4cc3b6; --secure-soft: #183a37;
+  --accent-soft: #3a2c17; --warn: #f08a7e; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 56px; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 750; letter-spacing: -0.01em; }
+h2 { font-size: 1.6rem; font-weight: 750; }
+h3 { font-size: 1.1rem; font-weight: 600; }
+p { margin: 0; }
+section { display: grid; gap: 18px; min-width: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--sunk); padding: 0.1em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+a { color: var(--secure); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header { display: grid; gap: 16px; }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 62ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 10px; }
+.chip { font-family: var(--font-mono); font-size: 0.78rem; padding: 4px 10px; border-radius: 999px; background: var(--sunk); color: var(--fg); }
+.chip.ok { background: var(--secure-soft); color: var(--secure); }
+
+.figure { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 12px; min-width: 0; }
+.figure .scroll { overflow-x: auto; }
+.figure svg { display: block; min-width: 720px; width: 100%; height: auto; }
+.caption { font-size: 0.92rem; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.9rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 22px; height: 0; border-top: 3px solid var(--accent); display: inline-block; }
+.sw.secure { border-top-color: var(--secure); }
+.sw.dash { border-top: 2px dashed var(--muted); }
+
+/* SVG parts, colored from tokens */
+.n rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.n.box-secure rect { fill: var(--secure-soft); stroke: var(--secure); }
+.n.box-accent rect { fill: var(--accent-soft); stroke: var(--accent); }
+.zone { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.zone-label { fill: var(--muted); font: 600 12px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.t1 { fill: var(--fg); font: 600 15px var(--font-body); }
+.t2 { fill: var(--muted); font: 400 12.5px var(--font-body); }
+.flow { stroke: var(--accent); stroke-width: 3; fill: none; }
+.flow-secure { stroke: var(--secure); stroke-width: 5; fill: none; }
+.flow-dash { stroke: var(--muted); stroke-width: 1.8; fill: none; stroke-dasharray: 5 5; }
+.lbl { fill: var(--muted); font: 400 12px var(--font-body); }
+.lbl-secure { fill: var(--secure); font: 600 12px var(--font-body); }
+.head-accent { fill: var(--accent); }
+.head-secure { fill: var(--secure); }
+.head-muted { fill: var(--muted); }
+.x { stroke: var(--warn); stroke-width: 2.5; }
+
+/* Timeline: a real sequence, so numbers carry meaning */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); min-width: 0; }
+.steps li::before { content: counter(s); font-family: var(--font-display); font-weight: 750; font-size: 1.5rem; color: var(--accent); line-height: 1.1; }
+.steps li > div { display: grid; gap: 4px; min-width: 0; }
+.steps .why { color: var(--muted); font-size: 0.95rem; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.95rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--sunk); }
+tr:last-child td { border-bottom: 0; }
+
+.glossary { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 32px; }
+.glossary div { padding: 12px 0; border-top: 1px solid var(--line); display: grid; gap: 2px; min-width: 0; }
+.glossary dt { font-weight: 600; }
+.glossary dd { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+.gotchas { display: grid; gap: 12px; }
+.gotcha { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 24px; padding: 14px 16px; background: var(--surface); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; }
+.gotcha .what { font-weight: 600; }
+.gotcha .fix { color: var(--muted); }
+@media (max-width: 640px) { .gotcha { grid-template-columns: 1fr; } }
+
+pre { margin: 0; background: var(--sunk); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.5; }
+.cmd { display: grid; gap: 6px; }
+.cmd p { color: var(--muted); font-size: 0.95rem; }
+
+.next { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.next li { padding-left: 20px; position: relative; }
+.next li::before { content: ""; position: absolute; left: 0; top: 0.65em; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
+
+footer { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+@page { size: Letter; margin: 14mm 12mm; }
+@media print {
+  body { font-size: 11pt; padding: 0; }
+  .wrap { gap: 28px; max-width: none; }
+  .figure .scroll, .tablewrap { overflow: visible; }
+  .figure svg, table { min-width: 0; }
+  .figure, .gotcha, .steps li, .glossary div, tr, pre, .cmd { break-inside: avoid; }
+  h2 { break-after: avoid; }
+  a { color: inherit; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Homelab session recap · built with Claude Code</div>
+  <h1>From a password manager to a live website</h1>
+  <p class="lede">In one day we set up a safe place for secrets, locked down the domain on Cloudflare, put a reverse proxy with a real certificate on the Chromebook, and made a test page reachable from anywhere on the internet without opening a single port on the home router.</p>
+  <div class="facts">
+    <span class="chip ok">https://hello.example.com is live</span>
+    <span class="chip">Domain, proxy and tunnel done</span>
+    <span class="chip">0 router ports opened</span>
+  </div>
+</header>
+
+<section>
+  <div class="prose" style="display:grid;gap:12px">
+    <div class="eyebrow">The big picture</div>
+    <h2>How a visitor reaches the site</h2>
+    <p>Someone types <code>hello.example.com</code>. Cloudflare answers, handles the secure connection, and passes the request down a tunnel that the Chromebook itself opened from the inside. Traefik, the "front desk" program, looks at the name and hands the request to the right app.</p>
+  </div>
+  <div class="figure">
+    <div class="scroll">
+    <svg viewBox="0 0 900 360" role="img" aria-label="Visitor to Cloudflare, then through an outbound tunnel past the router to cloudflared, Traefik and the whoami app on the Chromebook">
+      <defs>
+        <marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head-accent"/></marker>
+        <marker id="hs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head-secure"/></marker>
+      </defs>
+
+      <!-- zones -->
+      <rect class="zone" x="410" y="30" width="476" height="312" rx="12"/>
+      <text class="zone-label" x="426" y="54">Your home network</text>
+      <rect class="zone" x="560" y="70" width="312" height="256" rx="10"/>
+      <text class="zone-label" x="576" y="94">Chromebook · home server</text>
+
+      <!-- visitor -->
+      <g class="n"><rect x="16" y="140" width="128" height="72" rx="8"/></g>
+      <text class="t1" x="80" y="171" text-anchor="middle">Visitor</text>
+      <text class="t2" x="80" y="192" text-anchor="middle">phone or laptop</text>
+
+      <!-- cloudflare -->
+      <g class="n box-accent"><rect x="190" y="120" width="180" height="112" rx="8"/></g>
+      <text class="t1" x="280" y="152" text-anchor="middle">Cloudflare</text>
+      <text class="t2" x="280" y="174" text-anchor="middle">finds the name (DNS)</text>
+      <text class="t2" x="280" y="192" text-anchor="middle">secure HTTPS to visitor</text>
+      <text class="t2" x="280" y="210" text-anchor="middle">hides your home IP</text>
+
+      <!-- router -->
+      <g class="n"><rect x="430" y="146" width="100" height="62" rx="8"/></g>
+      <text class="t1" x="480" y="172" text-anchor="middle">Router</text>
+      <text class="t2" x="480" y="192" text-anchor="middle">no open ports</text>
+
+      <!-- containers -->
+      <g class="n box-secure"><rect x="586" y="112" width="140" height="58" rx="8"/></g>
+      <text class="t1" x="656" y="137" text-anchor="middle">cloudflared</text>
+      <text class="t2" x="656" y="156" text-anchor="middle">tunnel end</text>
+
+      <g class="n"><rect x="586" y="230" width="140" height="66" rx="8"/></g>
+      <text class="t1" x="656" y="256" text-anchor="middle">Traefik</text>
+      <text class="t2" x="656" y="276" text-anchor="middle">front desk + certificate</text>
+
+      <g class="n"><rect x="760" y="230" width="100" height="66" rx="8"/></g>
+      <text class="t1" x="810" y="256" text-anchor="middle">whoami</text>
+      <text class="t2" x="810" y="276" text-anchor="middle">test page</text>
+
+      <!-- flows -->
+      <path class="flow" d="M144,176 L186,176" marker-end="url(#ha)"/>
+      <path class="flow-secure" d="M370,176 C400,176 410,176 430,176 M530,176 C556,176 560,141 582,141" marker-end="url(#hs)"/>
+      <text class="lbl-secure" x="380" y="250">encrypted tunnel,</text>
+      <text class="lbl-secure" x="380" y="266">opened from inside</text>
+      <path class="flow" d="M656,170 L656,226" marker-end="url(#ha)"/>
+      <path class="flow" d="M726,263 L756,263" marker-end="url(#ha)"/>
+      <text class="lbl" x="666" y="203">https://traefik:443</text>
+
+      <!-- blocked inbound -->
+      <line class="x" x1="470" y1="112" x2="490" y2="132"/>
+      <line class="x" x1="490" y1="112" x2="470" y2="132"/>
+      <text class="lbl" x="480" y="104" text-anchor="middle">nothing gets in uninvited</text>
+    </svg>
+    </div>
+    <div class="legend">
+      <span><i class="sw"></i>a web request</span>
+      <span><i class="sw secure"></i>the tunnel (encrypted)</span>
+    </div>
+    <p class="caption">The router never forwards anything. The Chromebook calls out to Cloudflare and keeps that line open, so visitors' requests ride back down it.</p>
+  </div>
+</section>
+
+<section>
+  <div class="prose" style="display:grid;gap:12px">
+    <div class="eyebrow">What we did, in order</div>
+    <h2>The day, step by step</h2>
+  </div>
+  <ol class="steps">
+    <li><div><h3>Picked 1Password and made a Homelab vault</h3><p>A 1Password Individual account (about $36/yr after the trial; Bitwarden is a free alternative), the desktop app, and its command-line tool <code>op</code>. Old logins from another password manager were copied over by hand, so no unencrypted export file ever touched the disk.</p><p class="why">Why: every token and password gets one home.</p></div></li>
+    <li><div><h3>Made a Cloudflare DNS token and stored it</h3><p>Token <code>traefik-dns</code> can only edit DNS records for example.com. You pasted it into 1Password. Claude tested it without ever seeing it.</p><p class="why">Why: Traefik needs it to prove to Let's Encrypt that we own the domain.</p></div></li>
+    <li><div><h3>Stopped the constant PIN prompts</h3><p>Every command Claude runs looked like a new window to 1Password, so Windows Hello kept asking. A <strong>service account</strong> that can only see the Homelab vault fixed it. Your Personal vault stays out of reach.</p><p class="why">Why: far fewer interruptions. The trade-off: any program running as that Windows user can use the Homelab vault. A YubiKey would not have helped here.</p></div></li>
+    <li><div><h3>Locked down the domain's security settings</h3><p>In Cloudflare: encryption mode <strong>Full (strict)</strong>, <strong>Always Use HTTPS</strong> on, oldest allowed TLS version <strong>1.2</strong>. HSTS was left off on purpose because it is hard to undo.</p><p class="why">Why: visitors always get an encrypted connection, and Cloudflare insists on a real certificate at home too.</p></div></li>
+    <li><div><h3>Started Traefik and got a real certificate</h3><p>Traefik and a tiny test app (whoami) run in Docker on the Chromebook. It got a practice certificate from Let's Encrypt's test server first, then the real one: valid until 6 Feb 2027 and renewed automatically.</p><p class="why">Why: one program handles HTTPS for every app we add later.</p></div></li>
+    <li><div><h3>Opened the Cloudflare Tunnel</h3><p>You created tunnel <code>chromebook</code> and saved its token. Claude started the <code>cloudflared</code> container, then added the public route in your Chrome. The site answered from the internet with a valid certificate.</p><p class="why">Why: public access with no port forwarding and your home IP hidden.</p></div></li>
+    <li><div><h3>Wrote everything down and committed it</h3><p>Plan, inventory, decision records, how-tos, the stack config and helper scripts all went into a git repo. A scan before each commit confirmed no secrets went in.</p></div></li>
+  </ol>
+</section>
+
+<section>
+  <div class="prose" style="display:grid;gap:12px">
+    <div class="eyebrow">Secrets</div>
+    <h2>Where every secret lives, and how it travels</h2>
+    <p>The rule: a secret is typed once, by you, into 1Password. After that it only moves through pipes between programs. It is never printed, never in this repo, and never in a config file.</p>
+  </div>
+  <div class="figure">
+    <div class="scroll">
+    <svg viewBox="0 0 900 200" role="img" aria-label="1Password Homelab vault to the op tool on the PC, over SSH to locked files on the Chromebook, read by the Traefik and cloudflared containers">
+      <defs>
+        <marker id="hs2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head-secure"/></marker>
+      </defs>
+      <g class="n box-secure"><rect x="10" y="50" width="170" height="96" rx="8"/></g>
+      <text class="t1" x="95" y="84" text-anchor="middle">1Password</text>
+      <text class="t2" x="95" y="104" text-anchor="middle">Homelab vault</text>
+      <text class="t2" x="95" y="122" text-anchor="middle">(you paste tokens here)</text>
+
+      <g class="n"><rect x="240" y="50" width="170" height="96" rx="8"/></g>
+      <text class="t1" x="325" y="84" text-anchor="middle">op on the PC</text>
+      <text class="t2" x="325" y="104" text-anchor="middle">uses the service account</text>
+      <text class="t2" x="325" y="122" text-anchor="middle">no PIN prompt</text>
+
+      <g class="n box-secure"><rect x="470" y="50" width="190" height="96" rx="8"/></g>
+      <text class="t1" x="565" y="84" text-anchor="middle">Chromebook files</text>
+      <text class="t2" x="565" y="104" text-anchor="middle">/opt/stacks/proxy/secrets</text>
+      <text class="t2" x="565" y="122" text-anchor="middle">only your user can read</text>
+
+      <g class="n"><rect x="720" y="20" width="170" height="64" rx="8"/></g>
+      <text class="t1" x="805" y="47" text-anchor="middle">Traefik</text>
+      <text class="t2" x="805" y="66" text-anchor="middle">reads the DNS token</text>
+      <g class="n"><rect x="720" y="112" width="170" height="64" rx="8"/></g>
+      <text class="t1" x="805" y="139" text-anchor="middle">cloudflared</text>
+      <text class="t2" x="805" y="158" text-anchor="middle">reads the tunnel token</text>
+
+      <path class="flow-secure" d="M180,98 L236,98" marker-end="url(#hs2)"/>
+      <path class="flow-secure" d="M410,98 L466,98" marker-end="url(#hs2)"/>
+      <text class="lbl-secure" x="438" y="170" text-anchor="middle">over SSH</text>
+      <path class="flow-secure" d="M660,90 C690,90 690,52 716,52" marker-end="url(#hs2)"/>
+      <path class="flow-secure" d="M660,106 C690,106 690,144 716,144" marker-end="url(#hs2)"/>
+    </svg>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Secret</th><th>Stored in</th><th>What it can do</th><th>If it leaks</th></tr></thead>
+      <tbody>
+        <tr><td>Cloudflare DNS token</td><td>1Password Homelab · Chromebook <code>secrets/cf_dns_token</code></td><td>Edit DNS records for example.com only</td><td>Delete it in Cloudflare (My Profile → API Tokens) and make a new one</td></tr>
+        <tr><td>Cloudflare tunnel token</td><td>1Password Homelab · Chromebook <code>secrets/cf_tunnel_token</code></td><td>Run the <code>chromebook</code> tunnel</td><td>Tunnel overview → Rotate token, then copy the new one over</td></tr>
+        <tr><td>1Password service account token</td><td>1Password Personal · Windows user setting <code>OP_SERVICE_ACCOUNT_TOKEN</code></td><td>Read and write the Homelab vault only</td><td>Revoke it at my.1password.com → Developer</td></tr>
+        <tr><td>Your 1Password Emergency Kit</td><td>Printed or offline, with you</td><td>Sign in to 1Password on a new device</td><td>Change your 1Password password and Secret Key</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="prose" style="display:grid;gap:12px">
+    <div class="eyebrow">Certificates</div>
+    <h2>How Traefik proves it owns the domain</h2>
+    <p>Let's Encrypt only hands out a certificate to whoever controls the domain. Instead of letting Let's Encrypt connect to your house, Traefik proves control through Cloudflare's DNS. That is the "DNS challenge".</p>
+  </div>
+  <ol class="steps">
+    <li><div><h3>Traefik asks Let's Encrypt for a certificate</h3><p>For <code>hello.example.com</code>.</p></div></li>
+    <li><div><h3>Let's Encrypt replies with a puzzle</h3><p>"Put this exact text in a DNS record called <code>_acme-challenge.hello.example.com</code>."</p></div></li>
+    <li><div><h3>Traefik uses the DNS token to add that record in Cloudflare</h3><p>This is the only thing the token is allowed to do.</p></div></li>
+    <li><div><h3>Let's Encrypt checks the record, then issues the certificate</h3><p>Traefik removes the temporary record and stores the certificate in <code>letsencrypt/acme.json</code>. It repeats this about 30 days before expiry.</p></div></li>
+  </ol>
+</section>
+
+<section>
+  <div class="prose" style="display:grid;gap:12px">
+    <div class="eyebrow">Words you'll see</div>
+    <h2>Plain-language glossary</h2>
+  </div>
+  <dl class="glossary">
+    <div><dt>Reverse proxy (Traefik)</dt><dd>A front desk. Every web request arrives here first and gets sent to the right app by its name.</dd></div>
+    <div><dt>Container (Docker)</dt><dd>An app packaged with everything it needs, so it runs the same anywhere and is easy to start, stop or delete.</dd></div>
+    <div><dt>Cloudflare Tunnel</dt><dd>A private line the Chromebook dials out to Cloudflare. Visitors' requests come back down it, so the router stays closed.</dd></div>
+    <div><dt>DNS</dt><dd>The internet's phone book: turns a name like example.com into an address.</dd></div>
+    <div><dt>Certificate (TLS/HTTPS)</dt><dd>The padlock in the browser. Proves the site is really example.com and encrypts the connection.</dd></div>
+    <div><dt>Full (strict)</dt><dd>Cloudflare only talks to your server if your server shows a real, valid certificate.</dd></div>
+    <div><dt>SNI, "Match SNI to host"</dt><dd>The site name sent at the start of a secure connection. Matching it tells Traefik which certificate to show.</dd></div>
+    <div><dt>API token</dt><dd>A password for a program, limited to specific jobs. Ours can only do one thing each.</dd></div>
+    <div><dt>Service account</dt><dd>A 1Password login for a program instead of a person, limited to one vault.</dd></div>
+    <div><dt>Staging (Let's Encrypt)</dt><dd>A practice server that gives fake certificates, so mistakes don't hit the real limits.</dd></div>
+  </dl>
+</section>
+
+<section>
+  <div class="prose" style="display:grid;gap:12px">
+    <div class="eyebrow">Lessons</div>
+    <h2>Things that tripped us up</h2>
+    <p>Each of these cost a few minutes today. They're also written into the how-tos.</p>
+  </div>
+  <div class="gotchas">
+    <div class="gotcha"><div class="what">Cloudflare hides the tunnel token with asterisks</div><div class="fix">Click the eye icon to reveal it before copying. A 32-character "token" means you copied the masked one; the real one is about 184.</div></div>
+    <div class="gotcha"><div class="what">Closing the Claude window doesn't quit it</div><div class="fix">It keeps running in the system tray. Right-click the tray icon → Quit, so new settings (like the service account) take effect.</div></div>
+    <div class="gotcha"><div class="what">Script "does not exist" in PowerShell</div><div class="fix">The terminal was in your home folder, not the repo. Use the full path to the script.</div></div>
+    <div class="gotcha"><div class="what">The browser pane froze on pop-ups</div><div class="fix">Cloudflare opens pop-up windows that block the pane. We now use Claude in Chrome for Cloudflare.</div></div>
+    <div class="gotcha"><div class="what"><code>op run --</code> failed in Windows PowerShell</div><div class="fix">PowerShell 5.1 swallows a bare <code>--</code>. Write it as <code>'--'</code>.</div></div>
+    <div class="gotcha"><div class="what">The Chromebook's shell is fish, not bash</div><div class="fix">Copy bash scripts over and run them with <code>bash script.sh</code> instead of typing bash syntax over SSH.</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="prose" style="display:grid;gap:12px">
+    <div class="eyebrow">Checking on it</div>
+    <h2>Is it still working?</h2>
+  </div>
+  <div class="cmd">
+    <p>From the PC. You should see <code>HTTP/1.1 200</code> and <code>Server: cloudflare</code>.</p>
+    <pre>curl.exe -sS -D - https://hello.example.com -o NUL</pre>
+  </div>
+  <div class="cmd">
+    <p>Containers on the Chromebook. All three should say "Up".</p>
+    <pre>ssh chromebook "docker ps --format '{{.Names}} {{.Status}}'"</pre>
+  </div>
+  <div class="cmd">
+    <p>Is the Cloudflare DNS token still valid? Read-only, and the token is never shown.</p>
+    <pre>powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-cloudflare-token.ps1</pre>
+  </div>
+  <div class="cmd">
+    <p>Take everything offline (config, tokens and certificate stay on disk). Start it again with <code>docker compose up -d</code>.</p>
+    <pre>ssh chromebook "cd /opt/stacks/proxy; docker compose down"</pre>
+  </div>
+</section>
+
+<section>
+  <div class="prose" style="display:grid;gap:12px">
+    <div class="eyebrow">Still open</div>
+    <h2>What's next</h2>
+  </div>
+  <ul class="next prose">
+    <li><strong>The real app.</strong> Run it as a container behind Traefik, then retire the public whoami test page. It shows visitors their own request details, which is harmless but not needed.</li>
+    <li><strong>Reserve the server's IP address</strong> on the router so local tests keep working. Needs the router's admin page.</li>
+    <li><strong>Phone test:</strong> open the site with Wi-Fi off to tick the plan's original "done when" box.</li>
+    <li><strong>Later, maybe:</strong> HSTS (once the store is stable), two YubiKeys for account sign-in, Uptime Kuma, backups of <code>/opt/stacks</code>.</li>
+  </ul>
+</section>
+
+<footer>
+  <div class="prose">Names like <code>example.com</code> are placeholders. Swap in your own domain when following along. Stack used: Docker, Traefik v3, Let's Encrypt, Cloudflare (free plan) with Cloudflare Tunnel, and 1Password.</div>
+</footer>
+
+</div>
+
+</body>
+</html>

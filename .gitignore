@@ -1,0 +1,14 @@
+# Secrets never go in this repo
+.env
+*.env
+secrets/
+acme.json
+letsencrypt/
+*.key
+*.pem
+id_*
+# Backups and downloads
+backups/
+*.iso
+*.tgz
+*.tar.zst
