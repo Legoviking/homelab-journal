@@ -10,6 +10,7 @@ from a phone or PC, plus a small self-hosted website, all running locally where 
 
 | Date | Entry |
 |---|---|
+| 2026-11-08 | [A $30 Chromebook becomes a Linux server: custom firmware, ChromeOS wiped, CachyOS installed](journal/2026-11-08-30-dollar-chromebook-server.md) |
 | 2026-11-08 | [Secrets in 1Password, a reverse proxy with real HTTPS, and a public site with no open ports](journal/2026-11-08-secrets-proxy-tunnel.md) |
 
 ## What's in this repo
